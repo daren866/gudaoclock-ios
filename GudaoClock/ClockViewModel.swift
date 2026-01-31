@@ -27,7 +27,7 @@ class ClockViewModel: ObservableObject {
         
         // 更新日期
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy年MM月dd日 EEEE"
+        dateFormatter.dateFormat = "MM月dd日 EEEE"
         dateFormatter.locale = Locale(identifier: "zh_CN")
         dateString = dateFormatter.string(from: Date())
     }

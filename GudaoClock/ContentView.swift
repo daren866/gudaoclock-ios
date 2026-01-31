@@ -7,10 +7,14 @@ struct ContentView: View {
         ZStack {
             Color.black
                 .edgesIgnoringSafeArea(.all)
-            VStack {
+            
+            VStack(spacing: 40) {
+                // 日期显示
                 Text(viewModel.dateString)
                     .font(.system(size: 36, weight: .medium))
                     .foregroundColor(.white)
+                
+                // 时间显示
                 Text(viewModel.timeString)
                     .font(.system(size: 72, weight: .bold))
                     .foregroundColor(.white)
