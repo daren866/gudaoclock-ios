@@ -36,5 +36,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>应用需要发送通知来提醒您设置的闹钟时间</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
