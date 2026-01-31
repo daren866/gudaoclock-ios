@@ -49,6 +49,8 @@ class AlarmViewModel: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = "闹钟"
         content.body = "到时间了，点击停止提醒"
+        
+        // 使用默认通知声音
         content.sound = UNNotificationSound.default
         
         // 设置每天重复的通知触发时间
