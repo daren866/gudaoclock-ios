@@ -3,24 +3,32 @@ import Combine
 
 class ClockViewModel: ObservableObject {
     @Published var timeString = ""
+    @Published var dateString = ""
     
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        updateTime()
+        updateDateTime()
         
         // 每秒更新一次时间
         Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                self?.updateTime()
+                self?.updateDateTime()
             }
             .store(in: &cancellables)
     }
     
-    private func updateTime() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        timeString = formatter.string(from: Date())
+    private func updateDateTime() {
+        // 更新时间
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm:ss"
+        timeString = timeFormatter.string(from: Date())
+        
+        // 更新日期
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy年MM月dd日 EEEE"
+        dateFormatter.locale = Locale(identifier: "zh_CN")
+        dateString = dateFormatter.string(from: Date())
     }
 }

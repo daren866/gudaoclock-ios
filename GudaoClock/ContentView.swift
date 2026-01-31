@@ -7,10 +7,15 @@ struct ContentView: View {
         ZStack {
             Color.black
                 .edgesIgnoringSafeArea(.all)
-            Text(viewModel.timeString)
-                .font(.system(size: 72, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            VStack {
+                Text(viewModel.dateString)
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundColor(.white)
+                Text(viewModel.timeString)
+                    .font(.system(size: 72, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 }
