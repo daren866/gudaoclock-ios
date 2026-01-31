@@ -1,0 +1,124 @@
+name: Build GudaoClock IPA for TrollStore (iOS 15+ arm64)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: 'latest'
+
+    - name: Install Tuist via Homebrew
+      run: |
+        brew update
+        brew install tuist
+        tuist version
+
+    - name: Generate Project with Tuist
+      run: |
+        tuist generate --no-open
+        echo "生成的项目文件："
+        ls -la *.xcodeproj || echo "未找到项目文件"
+
+    - name: Build Xcode Archive
+      run: |
+        # 查找Tuist生成的项目文件（动态查找，确保兼容性）
+        PROJECT_FILE=$(find . -maxdepth 1 -name "*.xcodeproj" | head -1)
+        if [ -z "$PROJECT_FILE" ]; then
+          echo "错误：未找到 .xcodeproj 文件"
+          exit 1
+        fi
+        PROJECT_NAME=$(basename "$PROJECT_FILE" .xcodeproj)
+        
+        # 使用GudaoClock作为主要Scheme名称
+        # 如果动态查找的项目名不是GudaoClock，此处可强制指定
+        BUILD_SCHEME="GudaoClock"
+        echo "使用项目: $PROJECT_NAME, Scheme: $BUILD_SCHEME"
+        
+        xcodebuild clean archive \
+          -project "$PROJECT_NAME.xcodeproj" \
+          -scheme "$BUILD_SCHEME" \
+          -configuration Release \
+          -archivePath "$PWD/build/GudaoClock.xcarchive" \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          -destination generic/platform=iOS \
+          ENABLE_BITCODE=NO \
+          ARCHS=arm64 \
+          ONLY_ACTIVE_ARCH=NO \
+          IPHONEOS_DEPLOYMENT_TARGET=15.0 \
+          VALID_ARCHS=arm64
+
+    - name: Verify Binary Architecture
+      run: |
+        ARCHIVE_PATH="$PWD/build/GudaoClock.xcarchive"
+        APP_BUNDLE=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d | head -1)
+        if [ -z "$APP_BUNDLE" ]; then
+          echo "错误：未找到 .app 包"
+          exit 1
+        fi
+        APP_NAME=$(basename "$APP_BUNDLE" .app)
+        APP_BINARY="$APP_BUNDLE/$APP_NAME"
+        
+        echo "🔍 验证 GudaoClock 二进制架构:"
+        lipo -info "$APP_BINARY"
+        echo "✅ 架构验证完成"
+
+    - name: Package & Fix for TrollStore
+      id: package_ipa
+      run: |
+        ARCHIVE_PATH="$PWD/build/GudaoClock.xcarchive"
+        APP_BUNDLE=$(find "$ARCHIVE_PATH/Products/Applications" -name "*.app" -type d | head -1)
+        
+        if [ -z "$APP_BUNDLE" ]; then
+          echo "错误：未找到 .app 包"
+          exit 1
+        fi
+        
+        APP_NAME=$(basename "$APP_BUNDLE" .app)
+        APP_BINARY="$APP_BUNDLE/$APP_NAME"
+        
+        echo "处理应用: $APP_NAME"
+        
+        # 1. 更新Info.plist最低版本
+        INFO_PLIST="$APP_BUNDLE/Info.plist"
+        if [ -f "$INFO_PLIST" ]; then
+          /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 15.0" "$INFO_PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 15.0" "$INFO_PLIST"
+          echo "✅ 已设置MinimumOSVersion为15.0"
+        fi
+        
+        # 2. 修复可执行权限
+        chmod +x "$APP_BINARY"
+        echo "✅ 已修复可执行权限"
+        
+        # 3. 伪签名（TrollStore必需）
+        brew install ldid
+        ldid -S "$APP_BINARY"
+        echo "✅ 已完成伪签名"
+        
+        # 4. 打包为IPA
+        IPA_DIR="$PWD/build/ipa"
+        mkdir -p "$IPA_DIR/Payload"
+        cp -R "$APP_BUNDLE" "$IPA_DIR/Payload/"
+        cd "$IPA_DIR"
+        zip -r "../GudaoClock_iOS15_TrollStore.ipa" Payload
+        
+        echo "ipa_name=GudaoClock_iOS15_TrollStore.ipa" >> $GITHUB_OUTPUT
+        echo "🎉 GudaoClock IPA打包完成！"
+
+    - name: Upload GudaoClock IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: GudaoClock-iOS15-TrollStore
+        path: ${{ github.workspace }}/build/GudaoClock_iOS15_TrollStore.ipa
+        retention-days: 7
