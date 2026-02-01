@@ -1,3 +1,5 @@
+# GudaoClock
+基于SwiftUI Starter使用AI生成并用于iOS巨魔使用
 # SwiftUI Starter
 
 Template for SwiftUI projects with a filesystem-first setup using Tuist + just. Generates Xcode workspace, builds/tests via Tuist, formats with SwiftFormat, optional build-server for LSP.
